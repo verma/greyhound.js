@@ -1,1 +1,1 @@
-require('./gh-reader-test.js');
+require('./gh-reader-spec.js');

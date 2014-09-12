@@ -52,7 +52,7 @@ gulp.task('clean', function(){
 
 // lint all of our js source files
 gulp.task('lint', function (){
-    return gulp.src(['src/**/*.js', 'index.js'])
+    return gulp.src(['lib/**/*.js', 'index.js'])
     .pipe(jshint({
         "smarttabs": true
     }))
@@ -72,10 +72,12 @@ gulp.task('push-reload', function() {
         .pipe(connect.reload());
 });
 
+gulp.task('build-and-reload', ['lint', 'build-specs', 'push-reload']);
+
 gulp.task('watch', ['build-specs'], function() {
     // watch all our dirs and reload if any build stuff changes
     //
-    gulp.watch(['src/**/*.js', 'browser/**/*.js', 'index.js', 'test/spec/**/*.js'], ['lint', 'build-specs', 'push-reload']);
+    gulp.watch(['lib/**/*.js', 'browser/**/*.js', 'index.js', 'test/spec/**/*.js'], ['build-and-reload']);
 });
 
 // build client side js app
@@ -93,7 +95,7 @@ gulp.task('clean', function() {
 });
 
 gulp.task('dist-browserify', function(cb) {
-    return gulp.src('browser/index.js')
+    return gulp.src('index.js')
         .pipe(browserify())
         .on("error", gutil.log)
         .on("error", gutil.beep)

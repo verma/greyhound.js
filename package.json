@@ -7,7 +7,7 @@
     "test": "test"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jasmine JASMINE_CONFIG_PATH=test/jasmine.json"
   },
   "repository": {
     "type": "git",
@@ -38,6 +38,10 @@
     "gulp-livereload": "~2.1.1",
     "gulp-rename": "~1.2.0",
     "open": "0.0.5",
-    "gulp-connect": "~2.0.6"
+    "gulp-connect": "~2.0.6",
+    "buffer": "~2.7.0"
+  },
+  "dependencies": {
+    "ws": "~0.4.32"
   }
 }

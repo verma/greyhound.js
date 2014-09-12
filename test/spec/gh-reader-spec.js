@@ -1,4 +1,4 @@
-var gh = require('../../browser');
+var gh = require('../..');
 
 
 describe("Schema", function() {
