@@ -60,7 +60,9 @@ reader.destroy(sessionId, function(err) {
 
 ### Schema
 
-A `Schema` class is provided to construct schemas on the fly.  This class provides two standard schemas accessible through functions: `standard()` and `XYZ()`.  To construct a schema you could use one of these as starting points or build your own e.g. a schema definition for just the X value, along with Intensity and Red color channel would look like:
+A `Schema` class is provided to construct schemas on the fly.  This class provides two standard schemas accessible through functions: `standard()` and `XYZ()`.  To construct a schema you could use one of these as starting points or build your own.
+
+As an example, a schema definition for just the X value, along with Intensity and Red color channel would look like:
 
 ```javascript
 Schema.X().Intensity().Red();
