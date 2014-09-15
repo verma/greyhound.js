@@ -16,7 +16,7 @@ The library provides two _classes_ named `GreyhoundReader` and `Schema`.
 This is the main class to read data from Greyhound.  You start by creating a session on the Greyhound server and then querying it for data.
 
 ```javascript
-var GreyhoundReader = require('greyhound').GreyhoundReader
+var GreyhoundReader = require('greyhound.js').GreyhoundReader
 
 var reader = GreyhoundReader("server.com");
 reader.createSession("pipeline-id", function(err, sessionId) {
@@ -38,7 +38,7 @@ reader.read(sessionId, function(err, data) {
 You can additionally specify a schema as well:
 
 ```javascript
-var Schema = require('greyhound').Schema;
+var Schema = require('greyhound.js').Schema;
 
 reader.read(sessionId, {
     schema: Schema.standard()
