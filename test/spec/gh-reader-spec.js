@@ -1,4 +1,5 @@
 var gh = require('../..');
+var Buffer = require('buffer').Buffer;
 
 
 describe("Schema", function() {
@@ -42,6 +43,180 @@ describe("Schema", function() {
         expect(s[0]).toEqual({name: "X", type:"floating", size: 4});
         expect(s[1]).toEqual({name: "Y", type:"floating", size: 4});
         expect(s[2]).toEqual({name: "Z", type:"floating", size: 4});
+    });
+});
+
+describe("Stats", function() {
+    it("should error out if no object is specified", function() {
+        var f = function() {
+            new gh.Stats();
+        };
+
+        expect(f).toThrowError("Need root object");
+    });
+
+    it("should correctly query values", function() {
+        var o = { val1: { description: "", value: "123", type: "double" }};
+        var s = new gh.Stats(o);
+
+        var v = s.get("val1");
+        expect(v).toBe(123.0);
+        expect(typeof(v)).toBe("number");
+    });
+
+    it("should return null if the node is not value type", function() {
+        var o = { val1: { description: "", value: "123", typee: "double" }};
+        var s = new gh.Stats(o);
+
+        var v = s.get("val1");
+        expect(v).toBe(null);
+    });
+
+    it("should return null if the asked value doesn't exist", function() {
+        var o = { val1: { description: "", value: "123", type: "double" }};
+        var s = new gh.Stats(o);
+
+        var v = s.get("val");
+        expect(v).toBe(null);
+    });
+
+    it("should return hierchical values correctly", function() {
+        var o = { val1: { val2: { description: "", value: "123", type: "double" }}};
+        var s = new gh.Stats(o);
+
+        var v = s.get("val1/val2");
+        expect(v).toBe(123.0);
+        expect(typeof(v)).toBe("number");
+    });
+
+    it("should return null if hierchical values don't exist", function() {
+        var o = { val1: { val2: { description: "", value: "123", type: "double" }}};
+        var s = new gh.Stats(o);
+
+        var v = s.get("val/val2");
+        expect(v).toBe(null);
+    });
+
+    it("should null if the requested value is not a value type", function() {
+        var o = { val1: { val2: { description: "", value: "123", type: "double" }}};
+        var s = new gh.Stats(o);
+
+        var v = s.get("val1");
+        expect(v).toBe(null);
+    });
+
+    it("should correctly convert string types", function() {
+        var o = { val2: { description: "", value: "123", type: "string" }};
+        var s = new gh.Stats(o);
+
+        var v = s.get("val2");
+        expect(v).toEqual("123");
+    });
+
+    it("should correctly convert nonNegativeInteger types", function() {
+        var o = { val2: { description: "", value: "123", type: "nonNegativeInteger" }};
+        var s = new gh.Stats(o);
+
+        var v = s.get("val2");
+        expect(v).toEqual(123);
+    });
+
+    it("should correctly convert float types", function() {
+        var o = { val2: { description: "", value: "123.23", type: "float" }};
+        var s = new gh.Stats(o);
+
+        var v = s.get("val2");
+        expect(v).toEqual(123.23);
+    });
+
+    it("should correctly convert base64Binary types", function() {
+        var o = { val2: { description: "", value: "aGVsbG8=", type: "base64Binary" }};
+        var s = new gh.Stats(o);
+
+        var v = s.get("val2");
+
+        expect(Buffer.isBuffer(v)).toBeTruthy();
+        expect(v.toString('utf-8')).toEqual("hello");
+    });
+
+    it("should correctly convert values requested as an array", function() {
+        var o = { val2: { description: "", value: "aGVsbG8=", type: "base64Binary" }};
+        var s = new gh.Stats(o);
+
+        var v = s.get(["val2"]);
+
+        expect(v.length).toBe(1);
+        expect(v[0].toString('utf-8')).toEqual("hello");
+    });
+
+    it("should correctly convert values requested as an array", function() {
+        var o = {
+            val1: { description: "", value: "111.11", type: "double" },
+            val2: { description: "", value: "222.22", type: "double" }
+        };
+
+        var s = new gh.Stats(o);
+        var v = s.get(["val1", "val2"]);
+
+        expect(v.length).toBe(2);
+        expect(v[0]).toEqual(111.11);
+        expect(v[1]).toEqual(222.22);
+    });
+
+    it("should return nulls in an array if invalid values are requested", function() {
+        var o = {
+            val1: { description: "", value: "111.11", type: "double" },
+            val2: { description: "", value: "222.22", type: "double" }
+        };
+
+        var s = new gh.Stats(o);
+        var v = s.get(["v1", "v2", "v3/v4/v5", "v3/v3/v3/v4/v5/v6"]);
+
+        expect(v.length).toBe(4);
+        v.forEach(function(_v) {
+            expect(_v).toBe(null);
+        });
+    });
+
+    it("should return hierchical values correctly when requested in an array", function() {
+        var o = {
+            val1: {
+                val3: {description: "", value: "111.11", type: "double" }
+            },
+            val2: { description: "", value: "222.22", type: "double" }
+        };
+
+        var s = new gh.Stats(o);
+        var v = s.get(["val2", "val1/val3"]);
+
+        expect(v.length).toBe(2);
+        expect(v[0]).toEqual(222.22);
+        expect(v[1]).toEqual(111.11);
+    });
+
+    it("should coerce values when requested as arrays inside arrays", function() {
+        var o = {
+            val1: {
+                val3: {description: "", value: "111.11", type: "double" }
+            },
+            val2: { description: "", value: "222.22", type: "double" }
+        };
+
+        var s = new gh.Stats(o);
+        var v = s.get([["val2"], "val1/val3", ["val1/val3"]]);
+
+        expect(v.length).toBe(3);
+        expect(v[0].length).toBe(1);
+        expect(v[2].length).toBe(1);
+
+        expect(v[0][0]).toEqual(222.22);
+        expect(v[1]).toEqual(111.11);
+        expect(v[2][0]).toEqual(111.11);
+    });
+
+    it("should return an empty array if an empty array was requested", function() {
+        var s = new gh.Stats({});
+        expect(s.get([])).toEqual([]);
     });
 });
 
@@ -147,7 +322,7 @@ describe("GreyhoundReader", function() {
         it("should handle invalid pipeline in the callback", function(done) {
             var s = new gh.GreyhoundReader("localhost:8080");
             s.read("invalid-pipeline", function(err) {
-                expect(err.message).toBe("Affinity not found");
+                expect(err).toBeTruthy();
                 done();
             });
         });
@@ -179,6 +354,50 @@ describe("GreyhoundReader", function() {
                 });
             }, done);
 
+        });
+    });
+
+    describe(".getStats", function() {
+        it("should correctly get stats of a pipeline", function(done) {
+            withSession(function(err, s, sessionId, finish) {
+                s.getStats(sessionId, function(err, res) {
+                    expect(err).toBeFalsy();
+                    expect(res instanceof gh.Stats).toBeTruthy();
+
+                    finish();
+                });
+            }, done);
+        });
+
+        it("should throw an error if no pipeline is specified", function(done) {
+            withSession(function(err, s, sessionId, finish) {
+                var f = function() {
+                    s.getStats(null, function(){});
+                };
+
+                expect(f).toThrowError("Invalid session parameter");
+                finish();
+            }, done);
+        });
+
+        it("should coerce values correctly for mins and maxes", function(done) {
+            withSession(function(err, s, sessionId, finish) {
+                s.getStats(sessionId, function(err, res) {
+                    var n = res.mins();
+                    var x = res.maxs();
+
+                    expect(n[0]).toBeCloseTo(635589.01, 2);
+                    expect(n[1]).toBeCloseTo(848886.45, 2);
+                    expect(n[2]).toBeCloseTo(406.59, 2);
+
+                    expect(x[0]).toBeCloseTo(638994.75, 2);
+                    expect(x[1]).toBeCloseTo(853535.43, 2);
+                    expect(x[2]).toBeCloseTo(593.73, 2);
+
+
+                    finish();
+                });
+            }, done);
         });
     });
 
