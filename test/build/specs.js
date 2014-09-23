@@ -68,7 +68,7 @@ var Stats = function(obj) {
         "nonNegativeInteger": parseInt,
         "float": parseFloat,
         "double": parseFloat,
-        "string": function(v) { return v },
+        "string": function(v) { return v; },
         "base64Binary": function(v) {
             return new Buffer(v, 'base64');
         }
@@ -79,7 +79,7 @@ var Stats = function(obj) {
             if (!acc) return acc;
             return acc[v];
         }, root);
-    }
+    };
 
     // coerce properties, if an array is being asked for, return the value as
     // an array as well, otherwise use one of the cmap functions to coerce the
@@ -108,19 +108,19 @@ Stats.prototype.get = function(v) {
 
 Stats.prototype.mins = function() {
     return this.get([
-        "stages/drivers.las.reader/minx",
-        "stages/drivers.las.reader/miny",
-        "stages/drivers.las.reader/minz",
+        "X/minimum",
+        "Y/minimum",
+        "Z/minimum",
     ]);
-}
+};
 
 Stats.prototype.maxs = function() {
     return this.get([
-        "stages/drivers.las.reader/maxx",
-        "stages/drivers.las.reader/maxy",
-        "stages/drivers.las.reader/maxz",
+        "X/maximum",
+        "Y/maximum",
+        "Z/maximum",
     ]);
-}
+};
 
 var GreyhoundReader = function(host) {
     if (!host)
@@ -233,7 +233,14 @@ GreyhoundReader.prototype.getStats = function(sessionId, cb) {
             if (err) return cb(err);
 
             var root = JSON.parse(res.stats);
-            cb(null, new Stats(root));
+
+            var stats = root.stages['filters.stats'].statistic;
+            var obj = _.zipObject(
+                _.map(stats, function(v) {
+                    return v.name.value;
+                }), stats);
+
+            cb(null, new Stats(obj));
         });
     });
 };
