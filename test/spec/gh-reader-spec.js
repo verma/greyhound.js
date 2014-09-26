@@ -355,6 +355,45 @@ describe("GreyhoundReader", function() {
             }, done);
 
         });
+
+        it("should return an emitter and raise all lifetime events", function(done) {
+            withSession(function(err, s, sessionId, finish) {
+                var br = false, rr = false, er = false;
+                var e =
+                    s.read(sessionId, {
+                        schema: gh.Schema.XYZ()
+                    }, function(err, res) {
+                        expect(err).toBeFalsy();
+                        expect(res.numPoints * 12).toBe(res.numBytes);
+                        expect(res.data.length).toBe(res.numBytes);
+
+                        expect(br).toBeTruthy();
+                        expect(rr).toBeTruthy();
+                        expect(er).toBeTruthy();
+
+                        finish();
+                    });
+
+                e.on("begin", function(data) {
+                    expect(data).toBeTruthy();
+                    expect(data.numBytes).toBeGreaterThan(0);
+                    expect(data.numPoints).toBeGreaterThan(0);
+
+                    br = true;
+                });
+
+                e.on("read", function(data) {
+                    rr = true;
+
+                    expect(data.hasOwnProperty('sofar')).toBeTruthy()
+                    expect(data.hasOwnProperty('left')).toBeTruthy()
+                });
+
+                e.on("end", function() {
+                    er = true;
+                });
+            }, done);
+        });
     });
 
     describe(".getStats", function() {
