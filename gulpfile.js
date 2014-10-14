@@ -22,24 +22,6 @@ var path = require('path');
 var execFile = require('child_process').execFile;
 var fs = require('fs');
 
-/**
- * Tasks:
- *
- *  build (default):
- *    builds the client into ./dist
- *
- *  develop:
- *    builds client, and runs auto reloading dev server
- *
- *  lint:
- *    lint all javascript sourcefiles
- *
- *  test:
- *    run mocha tests in ./test/
- *
- *  debug:
- *    like develop but also runs tests and linting
- */
 
 gulp.task('tdd', ['serve-specs', 'watch']);
 
