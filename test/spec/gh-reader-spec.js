@@ -1,6 +1,115 @@
 var gh = require('../..');
 var Buffer = require('buffer').Buffer;
 
+//var ddescribe = describe;
+
+//var describe = function(){}
+
+
+describe("BBox", function() {
+    describe("construction", function() {
+        it("should initialize the object correctly when input is correct", function() {
+            var n = [-100, 0, -100]
+            var x = [500, 2, 200];
+
+            var b = new gh.BBox(n, x);
+
+            expect(b.mins).toEqual(n);
+            expect(b.maxs).toEqual(x);
+        });
+
+        it("should fail if the input doesn't have correct number of elements", function() {
+            var f = function() {
+                var n = [-100, 0, -100, 0]
+                var x = [500, 2, 200];
+
+                new gh.BBox(n, x);
+            };
+
+            var f1 = function() {
+                var n = [-100, 0, -100];
+                var x = [500, 2, 200, 10];
+
+                new gh.BBox(n, x);
+            };
+
+            expect(f).toThrowError("Mins and Maxs should have 3 elements each");
+            expect(f1).toThrowError("Mins and Maxs should have 3 elements each");
+        });
+
+        it("should fail if maxes doesn't have all elements larger than mins", function() {
+            var n = [1, 2, 3];
+            var x = [2, 3, 3];
+
+            var f = function() {
+                new gh.BBox(n, x);
+            };
+
+            var f1 = function() {
+                var n = [1.1234, 2, 3];
+                var x = [1.1234, 4, 6];
+
+                new gh.BBox(n, x);
+            }
+
+            expect(f).toThrowError("All elements of maxs should be greater than mins");
+            expect(f1).toThrowError("All elements of maxs should be greater than mins");
+        });
+    });
+
+    describe("splitV", function() {
+        it("should correctly split the box", function() {
+            var b = new gh.BBox([-100, -100, -100], [100, 100, 100]);
+            var c = b.splitV();
+
+            expect(c.length).toBe(2);
+
+            expect(c[0].mins).toEqual([-100, -100, -100]);
+            expect(c[0].maxs).toEqual([0, 100, 100]);
+            expect(c[1].mins).toEqual([0, -100, -100]);
+            expect(c[1].maxs).toEqual([100, 100, 100]);
+        });
+    });
+
+    describe("splitH", function() {
+        it("should correctly split the box", function() {
+            var b = new gh.BBox([-100, -100, -100], [100, 100, 100]);
+            var c = b.splitH();
+
+            expect(c.length).toBe(2);
+
+            expect(c[0].mins).toEqual([-100, -100, -100]);
+            expect(c[0].maxs).toEqual([100, 0, 100]);
+            expect(c[1].mins).toEqual([-100, 0, -100]);
+            expect(c[1].maxs).toEqual([100, 100, 100]);
+        });
+    });
+
+    describe("splitQuad", function() {
+        it("should correctly split the box", function() {
+            var b = new gh.BBox([-100, -100, -100], [100, 100, 100]);
+            var c = b.splitQuad();
+
+            expect(c.length).toBe(4);
+
+            // top-left
+            expect(c[0].mins).toEqual([-100, -100, -100]);
+            expect(c[0].maxs).toEqual([0, 0, 100]);
+
+            // top-right
+            expect(c[1].mins).toEqual([0, -100, -100]);
+            expect(c[1].maxs).toEqual([100, 0, 100]);
+
+            // bottom-left
+            expect(c[2].mins).toEqual([-100, 0, -100]);
+            expect(c[2].maxs).toEqual([0, 100, 100]);
+
+            // bottom right
+            expect(c[3].mins).toEqual([0, 0, -100]);
+            expect(c[3].maxs).toEqual([100, 100, 100]);
+        });
+    });
+});
 
 describe("Schema", function() {
     it("should be empty by itself", function() {
