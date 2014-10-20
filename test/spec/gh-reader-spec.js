@@ -1,11 +1,6 @@
 var gh = require('../..');
 var Buffer = require('buffer').Buffer;
 
-//var ddescribe = describe;
-
-//var describe = function(){}
-
-
 describe("BBox", function() {
     describe("construction", function() {
         it("should initialize the object correctly when input is correct", function() {
@@ -549,6 +544,7 @@ describe("GreyhoundReader", function() {
         });
     });
 
+
     describe(".destroy", function() {
         it("should report error inline if invalid session parameter is passed", function() {
             var s = new gh.GreyhoundReader("localhost:8080")
@@ -571,4 +567,99 @@ describe("GreyhoundReader", function() {
             });
         });
     });
+
+    var withSessionAndStats = function(cb, final_cb) {
+        var s = new gh.GreyhoundReader("localhost:8080");
+        s.createSession("58a6ee2c990ba94db936d56bd42aa703", function(err, session) {
+            if (err) return cb(err);
+
+            s.getStats(session, function(err, stats) {
+                if (err) return cb(err);
+
+                var done = function() {
+                    s.destroy(session, final_cb);
+                };
+
+                cb(null, s, session, stats, done);
+            });
+        });
+    };
+
+   jasmine.DEFAULT_TIMEOUT_INTERVAL = 10000;
+   describe(".read (indexed)", function() {
+       it("should read the default query with just the bounding box", function(done) {
+           withSessionAndStats(function(err, reader, sessionId, stats, finish) {
+               reader.read(sessionId, { bbox: stats.bbox() }, function(err, data) {
+                   expect(err).toBeFalsy();
+                   expect(data.numPoints).toBe(10650);
+                   expect(data.numBytes).toBe(213000);
+                   expect(data.data.length).toBeGreaterThan(0);
+
+                   finish();
+               });
+           }, done);
+       });
+
+       it("should read the default query with just the bounding box and a schema", function(done) {
+           withSessionAndStats(function(err, reader, sessionId, stats, finish) {
+               reader.read(sessionId, {
+                   bbox: stats.bbox(),
+                   schema: gh.Schema.XYZ()
+               }, function(err, data) {
+                   expect(err).toBeFalsy();
+                   expect(data.numPoints).toBe(10650);
+                   expect(data.numBytes).toBe(127800);
+                   expect(data.data.length).toBeGreaterThan(0);
+
+                   finish();
+               });
+           }, done);
+       });
+
+       it("should read the default query with a smaller bounding box", function(done) {
+           withSessionAndStats(function(err, reader, sessionId, stats, finish) {
+               var bbox = stats.bbox().splitQuad()[0];
+
+               reader.read(sessionId, {bbox: bbox}, function(err, data) {
+                   expect(err).toBeFalsy();
+                   expect(data.numPoints).toBe(2571);
+                   expect(data.numBytes).toBe(51420);
+                   expect(data.data.length).toBeGreaterThan(0);
+
+                   finish();
+               });
+           }, done);
+       });
+
+       it("should read the default query with a smaller bounding box and a depthBegin", function(done) {
+           withSessionAndStats(function(err, reader, sessionId, stats, finish) {
+               var bbox = stats.bbox().splitQuad()[0];
+
+               reader.read(sessionId, {bbox: bbox, depthBegin: 2}, function(err, data) {
+                   expect(err).toBeFalsy();
+                   expect(data.numPoints).toBeLessThan(2571);
+                   expect(data.numBytes).toBeGreaterThan(0);
+                   expect(data.data.length).toBeGreaterThan(0);
+
+                   finish();
+               });
+           }, done);
+       });
+
+       it("should read the default query with a smaller bounding box, depthBegin and depthEnd", function(done) {
+           withSessionAndStats(function(err, reader, sessionId, stats, finish) {
+               var bbox = stats.bbox().splitQuad()[0];
+
+               reader.read(sessionId, {bbox: bbox, depthBegin: 5, depthEnd: 6}, function(err, data) {
+                   expect(err).toBeFalsy();
+                   expect(data.numPoints).toBeLessThan(2571);
+                   expect(data.numBytes).toBeGreaterThan(0);
+                   expect(data.data.length).toBeGreaterThan(0);
+
+                   finish();
+               });
+           }, done);
+       });
+
+   });
 });
