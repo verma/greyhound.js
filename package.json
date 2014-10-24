@@ -1,6 +1,6 @@
 {
   "name": "greyhound.js",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "A greyhound client library for Node and Browser",
   "main": "index.js",
   "directories": {

@@ -649,6 +649,43 @@ describe("GreyhoundReader", function() {
            }, done);
        });
 
+        it("should work correctly when no data has to be read", function(done) {
+            withSession(function(err, s, sessionId, finish) {
+                var br = false, rr = false, er = false;
+                var e =
+                    s.read(sessionId, {
+                        bbox: new gh.BBox([0, 0, 0], [1, 1, 1]),  // most likely no data
+                        schema: gh.Schema.XYZ()
+                    }, function(err, res) {
+                        expect(err).toBeFalsy();
+                        expect(res.numPoints * 12).toBe(res.numBytes);
+                        expect(res.data.length).toBe(res.numBytes);
+
+                        expect(br).toBeTruthy();
+                        expect(rr).toBeFalsy();
+                        expect(er).toBeTruthy();
+
+                        finish();
+                    });
+
+                e.on("begin", function(data) {
+                    expect(data).toBeTruthy();
+                    expect(data.numBytes).toBe(0);
+                    expect(data.numPoints).toBe(0);
+
+                    br = true;
+                });
+
+                e.on("read", function(data) {
+                    rr = true;
+                });
+
+                e.on("end", function() {
+                    er = true;
+                });
+            }, done);
+        });
+
        it("should read the default query with a smaller bounding box, depthBegin and depthEnd", function(done) {
            withSessionAndStats(function(err, reader, sessionId, stats, finish) {
                var bbox = stats.bbox().splitQuad()[0];
