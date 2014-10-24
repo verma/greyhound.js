@@ -49,12 +49,12 @@ gulp.task('serve-specs', ['build-specs'], function() {
     });
 });
 
-gulp.task('push-reload', function() {
+gulp.task('push-reload', ["build-specs"], function() {
     gulp.src(['test/**/*'])
         .pipe(connect.reload());
 });
 
-gulp.task('build-and-reload', ['lint', 'build-specs', 'push-reload']);
+gulp.task('build-and-reload', ['push-reload']);
 
 gulp.task('watch', ['build-specs'], function() {
     // watch all our dirs and reload if any build stuff changes
@@ -63,7 +63,7 @@ gulp.task('watch', ['build-specs'], function() {
 });
 
 // build client side js app
-gulp.task('build-specs', function(){
+gulp.task('build-specs', ['lint'], function(){
     return gulp.src('test/spec/specs.js')
     .pipe(browserify())
     .on("error", gutil.log)

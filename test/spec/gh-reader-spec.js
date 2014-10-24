@@ -1,6 +1,37 @@
 var gh = require('../..');
 var Buffer = require('buffer').Buffer;
 
+var withSession = function(cb, final_cb) {
+    var s = new gh.GreyhoundReader("localhost:8080");
+    s.createSession("58a6ee2c990ba94db936d56bd42aa703", function(err, session) {
+        if (err) return cb(err);
+        var done = function() {
+            s.destroy(session, final_cb);
+        };
+
+        cb(null, s, session, done);
+    });
+};
+
+var withSessionAndStats = function(cb, final_cb) {
+    var s = new gh.GreyhoundReader("localhost:8080");
+    s.createSession("58a6ee2c990ba94db936d56bd42aa703", function(err, session) {
+        if (err) return cb(err);
+
+        s.getStats(session, function(err, stats) {
+            if (err) return cb(err);
+
+            var done = function() {
+                s.destroy(session, final_cb);
+            };
+
+            cb(null, s, session, stats, done);
+        });
+    });
+};
+
+
+
 describe("BBox", function() {
     describe("construction", function() {
         it("should initialize the object correctly when input is correct", function() {
@@ -395,18 +426,6 @@ describe("GreyhoundReader", function() {
         });
     });
 
-    var withSession = function(cb, final_cb) {
-        var s = new gh.GreyhoundReader("localhost:8080");
-        s.createSession("58a6ee2c990ba94db936d56bd42aa703", function(err, session) {
-            if (err) return cb(err);
-            var done = function() {
-                s.destroy(session, final_cb);
-            };
-
-            cb(null, s, session, done);
-        });
-    };
-
     describe(".read", function() {
         it("should throw an exception inline if invalid pipeline is supplied", function() {
             var f = function() {
@@ -455,7 +474,7 @@ describe("GreyhoundReader", function() {
                     expect(res.numPoints * 12).toBe(res.numBytes);
                     expect(res.data.length).toBe(res.numBytes);
                     finish();
-                });
+                    });
             }, done);
 
         });
@@ -568,22 +587,6 @@ describe("GreyhoundReader", function() {
         });
     });
 
-    var withSessionAndStats = function(cb, final_cb) {
-        var s = new gh.GreyhoundReader("localhost:8080");
-        s.createSession("58a6ee2c990ba94db936d56bd42aa703", function(err, session) {
-            if (err) return cb(err);
-
-            s.getStats(session, function(err, stats) {
-                if (err) return cb(err);
-
-                var done = function() {
-                    s.destroy(session, final_cb);
-                };
-
-                cb(null, s, session, stats, done);
-            });
-        });
-    };
 
    jasmine.DEFAULT_TIMEOUT_INTERVAL = 10000;
    describe(".read (indexed)", function() {
@@ -660,6 +663,87 @@ describe("GreyhoundReader", function() {
                });
            }, done);
        });
-
    });
+});
+
+describe("ReadQueue", function() {
+    describe("constructor", function() {
+        it("should throw errors on incorrect initialization", function() {
+            var f = function() {
+                var reader = new gh.ReadQueue();
+            };
+
+            var f2 = function() {
+                var reader = new gh.ReadQueue({some: "stuff"});
+            }
+
+            expect(f).toThrowError("Invalid reader");
+            expect(f2).toThrowError("Invalid session id");
+        });
+
+        it("should construct reader correctly", function(cb) {
+            withSession(function(err, reader, sessionId, done) {
+                var q = new gh.ReadQueue(reader, sessionId);
+
+                expect(q.reader).toBeTruthy();
+                expect(q.sessionId).toBeTruthy();
+                expect(q.schema).toBeTruthy();
+
+                done();
+            }, cb);
+        });
+    });
+
+    describe("queue", function() {
+        it("correctly reads results and calls callbacks", function(cb) {
+            withSessionAndStats(function(err, reader, sessionId, stats, done) {
+                var q = new gh.ReadQueue(reader, sessionId);
+                var bboxes = stats.bbox().splitQuad();
+
+                var got = 0;
+                for (var i = 0 ; i < 4 ; i ++) {
+                    q.queue({bbox: bboxes[i], depthStart: 1, depthEnd: 10}, function(err, data) {
+                        expect(err).toBeFalsy();
+
+                        got ++;
+
+                        expect(data.numBytes).toBeGreaterThan(0);
+                        expect(data.numPoints).toBeGreaterThan(0);
+                        expect(data.data.length).toBeGreaterThan(0);
+
+                        if (got === 4)
+                            done();
+                    });
+                }
+            }, cb);
+        });
+
+        it("correctly restarts the reader when the queue is exhausted", function(cb) {
+            withSessionAndStats(function(err, reader, sessionId, stats, done) {
+                var q = new gh.ReadQueue(reader, sessionId);
+                var bboxes = stats.bbox().splitQuad();
+
+                var i = 0;
+                var got = 0;
+                var queueSome = function() {
+                    q.queue({bbox: bboxes[i], deptStart: 1, depthEnd: 10}, function(err, data) {
+                        expect(err).toBeFalsy();
+
+                        got ++;
+
+                        expect(data.numBytes).toBeGreaterThan(0);
+                        expect(data.numPoints).toBeGreaterThan(0);
+                        expect(data.data.length).toBeGreaterThan(0);
+
+                        if (got === 4)
+                            return done();
+
+                        setTimeout(queueSome);
+                    });
+                };
+
+                queueSome();
+            }, cb);
+        });
+    });
 });
