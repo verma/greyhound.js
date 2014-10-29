@@ -135,6 +135,83 @@ describe("BBox", function() {
             expect(c[3].maxs).toEqual([100, 100, 100]);
         });
     });
+
+    describe("inflate", function() {
+        it("should raise expection if supplied array is messed up", function() {
+            var f1 = function() {
+                var h = new gh.BBox([10, 10, 10], [20, 20, 20]);
+                h.inflate([1, 2, 3, 4]);
+            };
+
+            expect(f1).toThrowError("by should either be a single entity or an array of 3 entities");
+        });
+
+        it("should inflate the bounds by correct amount", function() {
+            var h = new gh.BBox([100, 100, 100],
+                                [200, 200, 200]);
+
+            var h1 = h.inflate(5);
+
+            expect(h1.mins).toEqual([95, 95, 95]);
+            expect(h1.maxs).toEqual([205, 205, 205]);
+
+
+            var h2 = h.inflate([10, 5, 6]);
+            expect(h2.mins).toEqual([90, 95, 94]);
+            expect(h2.maxs).toEqual([210, 205, 206]);
+        });
+    });
+
+    describe("deflate", function() {
+        it("should be exact opposite of inflate", function() {
+            var h = new gh.BBox([100, 100, 100],
+                                [200, 200, 200]);
+
+            var i = h.inflate(-10);
+            var j = h.deflate(10);
+
+            expect(i.mins).toEqual(j.mins);
+            expect(i.maxs).toEqual(j.maxs);
+
+            i = h.inflate([10, -10, 20]);
+            j = h.deflate([-10, 10, -20]);
+
+            expect(i.mins).toEqual(j.mins);
+            expect(i.maxs).toEqual(j.maxs);
+        });
+    });
+
+    describe("offsetBy", function() {
+        it("should raise expection if supplied array is messed up", function() {
+            var f1 = function() {
+                var h = new gh.BBox([10, 10, 10], [20, 20, 20]);
+                h.offsetBy([1, 2, 3, 4]);
+            };
+
+            expect(f1).toThrowError("by should be an array of 3 entities");
+        });
+
+        it("should offset the box correctly", function() {
+            var h = new gh.BBox([100, 100, 100],
+                                [200, 200, 200]);
+
+            var i = h.offsetBy([10, 11, 12]);
+
+            expect(i.mins).toEqual([90, 89, 88]);
+            expect(i.maxs).toEqual([190, 189, 188]);
+        });
+    });
+
+    describe("center", function() {
+        it("should correctly compute the center of a bounding box", function() {
+            var h = new gh.BBox([100, 100, 100],
+                                [200, 200, 200]);
+
+            var c = h.center();
+
+            expect(c).toEqual([150, 150, 150]);
+        });
+    });
 });
 
 describe("Schema", function() {
