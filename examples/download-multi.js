@@ -20,37 +20,32 @@ var splitTillDepth = function(bbox, depth) {
     return split(bbox, 1);
 }
 
+var runTask = function(r, t, sessionId, done) {
+    r.read(sessionId, {depthEnd: 7, bbox: t}, done);
+}
+
 var downloadAll = function(sessionId, tasks, readers, done) {
     // pop as many tasks as we can
     //
-    while(true) {
-        if (tasks.length === 0 ||
-            readers.length === 0)
-            break; // We have no tasks or no readers
 
-        // otherwise pop a reader and a task
-        var r = readers.pop();
+    var completedReaders = 0;
+    var startReader = function(r) {
+        if (tasks.length === 0) {
+            completedReaders ++;
+            console.log("Done!", completedReaders);
+            if (completedReaders === readers.length)
+                process.nextTick(done);
+            return;
+        }
+
         var t = tasks.pop();
-
-        console.log("    :queue read, left readers:", readers.length);
-        r.read(sessionId, {depthEnd: 7, bbox: t}, function(err, data) {
-            // queue next read
-            readers.push(r);
-
-            console.log(tasks.length, readers.length);
-
-            // check if tasks list is empty and all readers have returned, if so
-            // we're done
-            if (tasks.length === 0 && readers.length === readers.maxReaders)
-                return process.nextTick(done);
-
-            if (err)
-                return console.log("Error handling request", err);
-
-            process.nextTick(downloadAll.bind(null, sessionId, tasks, readers, done));
-            console.log("        :read complete, points:", data.numPoints, "bytes:", data.numBytes);
+        runTask(r, t, sessionId, function(err, data) {
+            console.log("completed task:", t);
+            process.nextTick(startReader.bind(null, r))
         });
-    }
+    };
+
+    readers.forEach(startReader);
 };
 
 
@@ -58,7 +53,7 @@ var doStuff = function(readerCount) {
     // Figure out what we're getting
     //
     var server = process.env["HOST"] || "localhost:8080";
-    var pipeline = process.env["PIPELINE"] || "58a6ee2c990ba94db936d56bd42aa703";
+    var pipeline = process.env["PIPELINE"] || "3c51e54a3f0e1b7f4ffd582d4d970162";
 
     // create a greyhound reader
     //
