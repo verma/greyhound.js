@@ -53,7 +53,7 @@ var doStuff = function(readerCount) {
     // Figure out what we're getting
     //
     var server = process.env["HOST"] || "localhost:8080";
-    var pipeline = process.env["PIPELINE"] || "3c51e54a3f0e1b7f4ffd582d4d970162";
+    var pipeline = process.env["PIPELINE"] || "58a6ee2c990ba94db936d56bd42aa703";
 
     // create a greyhound reader
     //

@@ -1,6 +1,6 @@
 {
   "name": "greyhound.js",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "A greyhound client library for Node and Browser",
   "main": "index.js",
   "directories": {
@@ -41,11 +41,10 @@
     "gulp-util": "~3.0.1",
     "gulp-watch": "~1.0.2",
     "jaguarjs-jsdoc": "0.0.1",
-    "open": "0.0.5"
+    "open": "0.0.5",
+    "jsdoc": "^3.3.0-alpha9"
   },
   "dependencies": {
-    "jsdoc": "^3.3.0-alpha9",
-    "lodash": "^2.4.1",
     "ws": "~0.4.32"
   }
 }
